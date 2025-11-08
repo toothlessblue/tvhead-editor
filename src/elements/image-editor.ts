@@ -2,28 +2,54 @@ import { LitElement, css, html, type PropertyValues } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { bind } from '../decorators/bind';
 import { ColorPallette } from './color-pallette';
-import {ref, createRef} from 'lit/directives/ref.js';
+import { ref, createRef } from 'lit/directives/ref.js';
 
 @customElement('image-editor')
 export class ImageEditor extends LitElement {
+    static popoverEditor(inputImage: string, width: number, height: number) {
+        let editor = document.createElement('image-editor') as ImageEditor;
+        document.body.appendChild(editor);
+        editor.toggleAttribute('popover');
+        editor.width = width;
+        editor.height = height;
+        editor.classList.add('popover-editor');
+        editor.showPopover();
+        editor.loadImage(inputImage);
+        return editor;
+    }
+
     static styles = css`
         :host {
             width: 100%;
+        }
+
+        :host(.popover-editor) {
+            position: absolute;
+            inset: 0;
         }
 
         #canvasParent {
             display: block;
             margin-bottom: 30px;
             margin-top: 30px;
-        }
-
-        #canvasSubParent {
             position: relative;
         }
 
         canvas {
             background-color: #880088;
-            position: relative;
+            image-rendering: pixelated;
+            display: block;
+        }
+
+        #grid {
+            background-image: url(/canvas-grid.svg);
+            background-size: cover;
+            position: absolute;
+            inset: 0;
+            display: block;
+            width: 100%;
+            pointer-events: none;
+            background-repeat: no-repeat;
         }
 
         #bin {
@@ -35,7 +61,7 @@ export class ImageEditor extends LitElement {
 
         color-pallette {
             margin: auto;
-            width: min-content;
+            width: fit-content;
         }
     `;
 
@@ -50,6 +76,10 @@ export class ImageEditor extends LitElement {
 
     colorPallette = createRef<ColorPallette>();
 
+    currentColor: string = 'white';
+
+    originalImage: string = '';
+
     get scaledWidth(): number {
         return this.width * this.scale;
     }
@@ -59,7 +89,7 @@ export class ImageEditor extends LitElement {
     }
 
     get scale(): number {
-        let containerWidth = (this.canvas.parentElement?.clientWidth ?? 300) - this.padding * 2;
+        let containerWidth = this.canvas.parentElement?.clientWidth ?? 300;
         return containerWidth / this.width;
     }
 
@@ -69,8 +99,10 @@ export class ImageEditor extends LitElement {
             this._canvas.addEventListener('mousemove', this.onMouseMove);
             this._canvas.addEventListener('mousedown', this.onMouseDown);
             window.addEventListener('mouseup', this.onMouseUp);
-            this._canvas.width = this.scaledWidth;
-            this._canvas.height = this.scaledHeight;
+            this._canvas.width = this.width;
+            this._canvas.height = this.height;
+            this._canvas.style.height = `${this.scaledHeight}px`;
+            this._canvas.style.width = `${this.scaledWidth}px`;
         }
 
         return this._canvas;
@@ -85,7 +117,6 @@ export class ImageEditor extends LitElement {
             }
 
             this._ctx = ctx;
-            ctx.scale(this.scale, this.scale);
             ctx.imageSmoothingEnabled = false;
             ctx.fillStyle = 'black';
             ctx.fillRect(0, 0, this.width * this.scale, this.height * this.scale);
@@ -94,15 +125,24 @@ export class ImageEditor extends LitElement {
         return this._ctx;
     }
 
+    get imageData() {
+        if (!this._imageData) {
+            this._imageData = this.ctx.createImageData(1, 1);
+        }
+
+        return this._imageData;
+    }
+
     _canvas: HTMLCanvasElement | null = null;
     _ctx: CanvasRenderingContext2D | null = null;
+    _imageData: ImageData | null = null;
 
     @bind
     onCanvasClicked(e: MouseEvent) {
         let canvasRect = this.canvas.getBoundingClientRect();
 
-        var x = e.pageX - canvasRect.x;
-        var y = e.pageY - canvasRect.y;
+        let x = e.pageX - canvasRect.x;
+        let y = e.pageY - canvasRect.y;
 
         this.setPixel(Math.floor(x / this.scale), Math.floor(y / this.scale));
     }
@@ -121,22 +161,27 @@ export class ImageEditor extends LitElement {
 
     @bind
     onMouseDown(e: MouseEvent) {
+        if (e.buttons !== 1) return;
         this.isMouseDown = true;
         this.onCanvasClicked(e);
     }
 
     onColorInput(e: InputEvent) {
-        this.ctx.fillStyle = (e.target as HTMLInputElement).value;
+        this.currentColor = (e.target as ColorPallette).value;
     }
 
     @bind
-    onWindowResize() {
-        this.canvas.width = this.scaledWidth;
-        this.canvas.height = this.scaledHeight;
-        this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-        this.ctx.scale(this.scale, this.scale);
+    async onWindowResize() {
+        let img = document.createElement('img');
+        img.src = this.canvas.toDataURL();
+        await new Promise((res) => img.addEventListener('load', res));
 
-        this.ctx.fillStyle = this.colorPallette.value?.value ?? 'white';
+        this.canvas.style.height = `${this.scaledHeight}px`;
+        this.canvas.style.width = `${this.scaledWidth}px`;
+        this.canvas.width = this.width;
+        this.canvas.height = this.height;
+
+        this.ctx.drawImage(img, 0, 0);
     }
 
     @bind
@@ -147,44 +192,56 @@ export class ImageEditor extends LitElement {
     }
 
     setPixel(x: number, y: number) {
+        this.ctx.fillStyle = this.currentColor;
         this.ctx.fillRect(x, y, 1, 1);
     }
 
     getImage() {
-        return {
-            width: this.canvas.width,
-            height: this.canvas.height,
-            pixelWidth: this.width,
-            pixelHeight: this.height,
-            imageData: this.canvas.toDataURL(),
-        }
+        return this.canvas.toDataURL();
+    }
+
+    async loadImage(image: string) {
+        this.originalImage = image;
+        let img = document.createElement('img');
+        img.src = image;
+        await new Promise((res) => img.addEventListener('load', res));
+        await new Promise(requestAnimationFrame);
+        this.ctx.drawImage(img, 0, 0);
+    }
+
+    onSaveClose() {
+        this.dispatchEvent(new Event('close'));
+    }
+
+    onCancel() {
+        this.loadImage(this.originalImage);
+    }
+
+    async waitForExit() {
+        return new Promise((res) => this.addEventListener('close', res));
     }
 
     connectedCallback(): void {
         super.connectedCallback();
 
-        // Resizing canvas causes it to clear.
-        // While possible to prevent this by copying it to an image and back,
-        // it distorts and blurs the image. I'm not sure how to solve this, and given
-        // it's intended to be run on a mobile device, whose screen size can only change orientation,
-        // I'm not worried about it for now.
-        //
-        //window.addEventListener('resize', this.onWindowResize);
+        window.addEventListener('resize', this.onWindowResize);
     }
 
     protected firstUpdated(_changedProperties: PropertyValues): void {
-        this.onWindowResize()
-        this.ctx.fillStyle = 'black';
-        this.ctx.fillRect(0, 0, this.width, this.height);
-        this.ctx.fillStyle = 'white';
+        this.onWindowResize();
     }
 
     render() {
         return html`
-            <div id="canvasParent" style="padding: 0 ${this.padding}px">
+            <div
+                id="canvasParent"
+                style="margin-right: ${this.padding}px; margin-left: ${this.padding}px">
                 ${this.canvas}
-                <div id="bin" @click="${this.onBin}"></div>
+                <div id="grid"></div>
             </div>
+            <div id="bin" @click="${this.onBin}"></div>
+            <div @click="${this.onSaveClose}">Save</div>
+            <div @click="${this.onCancel}">Cancel</div>
             <color-pallette ${ref(this.colorPallette)} @input="${this.onColorInput}"></color-pallette>
         `;
     }

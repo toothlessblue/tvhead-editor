@@ -1,4 +1,6 @@
 import './main.ts'
 import './image-editor.ts'
 import './color-pallette.ts'
-
+import './matrix-element.ts'
+import './preview-matrix-element.ts'
+import './virtual-matrix.ts'

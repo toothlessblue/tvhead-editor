@@ -5,15 +5,16 @@ import { bind } from '../decorators/bind';
 @customElement('color-pallette')
 export class ColorPallette extends LitElement {
     @property({ type: Array })
-    colors: string[] = ['white', 'black'];
+    colors: string[] = ['#ffffff', '#000000'];
 
     @property({ type: String })
-    value: string = 'white';
+    value: string = '#ffffff';
 
     static styles = css`
         :host {
             display: flex;
             height: 50px;
+            flex-wrap: wrap;
         }
 
         input {
