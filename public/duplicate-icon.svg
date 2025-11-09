@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="208.7271"
+   height="208.72711"
+   viewBox="0 0 55.225712 55.225716"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   sodipodi:docname="duplicate-icon.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="px"
+     showguides="true"
+     inkscape:zoom="1"
+     inkscape:cx="112"
+     inkscape:cy="93"
+     inkscape:window-width="1278"
+     inkscape:window-height="703"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-45.514917,-34.820436)">
+    <rect
+       style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:2.64583;stroke-dasharray:none;stroke-opacity:1"
+       id="rect1-8"
+       width="45.70071"
+       height="45.70071"
+       x="53.717003"
+       y="36.143353"
+       ry="9.1685228"
+       rx="7.0642715" />
+    <rect
+       style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:2.64583;stroke-dasharray:none;stroke-opacity:1"
+       id="rect1"
+       width="45.70071"
+       height="45.70071"
+       x="46.837833"
+       y="43.022526"
+       ry="7.8157897"
+       rx="8.116394" />
+    <path
+       id="rect2"
+       style="fill:#4aff00;fill-opacity:1;stroke:none;stroke-width:0.264583;stroke-opacity:1"
+       d="m 69.646396,54.820428 c -1.059831,0 -1.913061,0.85323 -1.913061,1.913062 v 7.173722 h -7.174239 c -1.059832,0 -1.913062,0.85323 -1.913062,1.913062 0,1.059831 0.85323,1.913061 1.913062,1.913061 h 7.174239 v 7.17424 c 0,1.059831 0.85323,1.913061 1.913061,1.913061 1.059832,0 1.913062,-0.85323 1.913062,-1.913061 v -7.17424 h 7.173722 c 1.059832,0 1.913062,-0.85323 1.913062,-1.913061 0,-1.059832 -0.85323,-1.913062 -1.913062,-1.913062 H 71.559458 V 56.73349 c 0,-1.059832 -0.85323,-1.913062 -1.913062,-1.913062 z" />
+  </g>
+</svg>

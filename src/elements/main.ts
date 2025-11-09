@@ -26,12 +26,6 @@ export class main extends LitElement {
             <div id="virtual-matrix-container">
                 <virtual-matrix></virtual-matrix>
             </div>
-            <div id="elements">
-                // TODO create elements, draw them and assign metadata
-            </div>
-            // TODO export ZIP button
-            <br>
-            // TODO upload button
         `;
     }
 }

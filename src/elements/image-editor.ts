@@ -2,7 +2,10 @@ import { LitElement, css, html, type PropertyValues } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { bind } from '../decorators/bind';
 import { ColorPallette } from './color-pallette';
-import { ref, createRef } from 'lit/directives/ref.js';
+import type { Brush } from '../brushes/Brush';
+import { EraserBrush } from '../brushes/EraserBrush';
+import { PixelBrush } from '../brushes/PixelBrush';
+import { cache } from 'lit/directives/cache.js';
 
 @customElement('image-editor')
 export class ImageEditor extends LitElement {
@@ -26,6 +29,7 @@ export class ImageEditor extends LitElement {
         :host(.popover-editor) {
             position: absolute;
             inset: 0;
+            max-width: 1000px;
         }
 
         #canvasParent {
@@ -36,7 +40,7 @@ export class ImageEditor extends LitElement {
         }
 
         canvas {
-            background-color: #880088;
+            background-color: #333333;
             image-rendering: pixelated;
             display: block;
         }
@@ -63,6 +67,34 @@ export class ImageEditor extends LitElement {
             margin: auto;
             width: fit-content;
         }
+
+        .brush {
+            width: 50px;
+            height 50px;
+        }
+
+        .brush img {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .brush[selected] {
+            border: 5px solid;
+            border-image: conic-gradient(
+                rgba(255, 0, 0, 1) 0%,
+                rgba(255, 154, 0, 1) 10%,
+                rgba(208, 222, 33, 1) 20%,
+                rgba(79, 220, 74, 1) 30%,
+                rgba(63, 218, 216, 1) 40%,
+                rgba(47, 201, 226, 1) 50%,
+                rgba(28, 127, 238, 1) 60%,
+                rgba(95, 21, 242, 1) 70%,
+                rgba(186, 12, 248, 1) 80%,
+                rgba(251, 7, 217, 1) 90%,
+                rgba(255, 0, 0, 1) 100%
+            ) 1;solid;
+        }
     `;
 
     @property({ type: Number })
@@ -71,13 +103,15 @@ export class ImageEditor extends LitElement {
     @property({ type: Number })
     height: number = 32;
 
+    @property({ type: Array })
+    brushes: Brush[] = [new EraserBrush(), new PixelBrush()];
+
+    @property({ type: Object })
+    currentBrush: Brush | null = null;
+
     isMouseDown = false;
     padding: number = 30;
-
-    colorPallette = createRef<ColorPallette>();
-
     currentColor: string = 'white';
-
     originalImage: string = '';
 
     get scaledWidth(): number {
@@ -118,7 +152,7 @@ export class ImageEditor extends LitElement {
 
             this._ctx = ctx;
             ctx.imageSmoothingEnabled = false;
-            ctx.fillStyle = 'black';
+            ctx.fillStyle = '#00000000';
             ctx.fillRect(0, 0, this.width * this.scale, this.height * this.scale);
         }
 
@@ -186,14 +220,17 @@ export class ImageEditor extends LitElement {
 
     @bind
     onBin() {
-        this.ctx.fillStyle = 'black';
-        this.ctx.fillRect(0, 0, this.width * this.scale, this.height * this.scale);
-        this.ctx.fillStyle = this.colorPallette.value?.value ?? 'white';
+        this.ctx.clearRect(0, 0, this.width * this.scale, this.height * this.scale);
     }
 
     setPixel(x: number, y: number) {
-        this.ctx.fillStyle = this.currentColor;
-        this.ctx.fillRect(x, y, 1, 1);
+        if (!this.currentBrush) return;
+
+        this.currentBrush.paint(this.ctx, x, y);
+    }
+
+    erasePixel(x: number, y: number) {
+        this.ctx.clearRect(x, y, 1, 1);
     }
 
     getImage() {
@@ -233,16 +270,24 @@ export class ImageEditor extends LitElement {
 
     render() {
         return html`
-            <div
-                id="canvasParent"
-                style="margin-right: ${this.padding}px; margin-left: ${this.padding}px">
+            <div id="canvasParent" style="margin-right: ${this.padding}px; margin-left: ${this.padding}px">
                 ${this.canvas}
                 <div id="grid"></div>
             </div>
+
             <div id="bin" @click="${this.onBin}"></div>
             <div @click="${this.onSaveClose}">Save</div>
             <div @click="${this.onCancel}">Cancel</div>
-            <color-pallette ${ref(this.colorPallette)} @input="${this.onColorInput}"></color-pallette>
+
+            ${this.brushes.map(
+                (_) => html`
+                    <div @click="${() => this.currentBrush = _}" class="brush" ?selected=${_ === this.currentBrush}>
+                        <img src="${_.getIcon()}" />
+                    </div>
+                `
+            )}
+
+            ${cache(this.currentBrush?.renderBrushOptions())}
         `;
     }
 }

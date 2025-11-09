@@ -3,9 +3,15 @@ import { customElement, property } from 'lit/decorators.js';
 import type { MatrixElementData } from '../utils/matrix-element-data';
 import { createRef, ref } from 'lit/directives/ref.js';
 import type { Vec2 } from '../utils/vec2';
-import { keyed } from 'lit/directives/keyed.js';
 import type { PreviewMatrixElement } from './preview-matrix-element';
 import { bind } from '../decorators/bind';
+import deepClone from 'deep-clone';
+import JSZip from 'jszip';
+import { randomString } from '../utils/randomString';
+import { saveAs } from 'file-saver';
+import { trimDataURL } from '../utils/trimDataURL';
+import type { ZipManifest } from '../utils/zip-manifest';
+import { tryJsonParse } from '../utils/tryJsonParse';
 
 const INVISIBLE_DIV = document.createElement('div');
 document.body.appendChild(INVISIBLE_DIV);
@@ -22,7 +28,9 @@ export class VirtualMatrix extends LitElement {
 
     draggingElement!: HTMLDivElement;
     virtualGrid = createRef<HTMLDivElement>();
-    dragOffset: Vec2 = {x: 0, y: 0};
+    dragOffset: Vec2 = { x: 0, y: 0 };
+
+    fileImportInput = createRef<HTMLInputElement>();
 
     static styles = css`
         :host {
@@ -95,6 +103,12 @@ export class VirtualMatrix extends LitElement {
         this.requestUpdate('elementDatas');
     }
 
+    duplicateElement(element: MatrixElementData) {
+        let newData = deepClone(element);
+        this.elementDatas.push(newData);
+        this.requestUpdate('elementDatas');
+    }
+
     onDragStart(e: DragEvent) {
         this.draggingElement = e.target as any;
         let draggingElementRect = this.draggingElement.getBoundingClientRect();
@@ -141,10 +155,114 @@ export class VirtualMatrix extends LitElement {
 
     @bind
     onAnyImageChanged() {
-        let previewElements = Array.from(this.shadowRoot?.querySelectorAll('preview-matrix-element') ?? []) as PreviewMatrixElement[];
+        let previewElements = Array.from(
+            this.shadowRoot?.querySelectorAll('preview-matrix-element') ?? []
+        ) as PreviewMatrixElement[];
         for (let element of previewElements) {
             element.requestUpdate('data');
         }
+    }
+
+    async generateZipFile() {
+        let zip = new JSZip();
+        let manifest: ZipManifest = {
+            elements: deepClone(this.elementDatas)
+        };
+
+        for (let element of manifest.elements) {
+            for (let i = 0; i < element.images.length; i++) {
+                let image = element.images[i];
+                let id = randomString();
+                let filename = `${id}.png`;
+                zip.file(`${id}.png`, trimDataURL(image), { base64: true });
+                element.images[i] = filename;
+            }
+        }
+
+        zip.file(`manifest.json`, JSON.stringify(manifest));
+        return await zip.generateAsync({ type: 'blob' });
+    }
+
+    async uploadToScreen() {
+        //let zipFile = await this.generateZipFile();
+        alert('This wasnt implemented');
+    }
+
+    applyManifestImages(manifest: ZipManifest, images: Map<string, string>) {
+        let elementDatas: MatrixElementData[] = [];
+
+        for (let element of manifest.elements) {
+            elementDatas.push(element);
+
+            for (let i = 0; i < element.images.length; i++) {
+                let imageFilename = element.images[i];
+                let imageData = images.get(imageFilename);
+                if (!imageData) {
+                    alert(`Failed to import zip (Filename ${imageFilename} in manifest was not found as file)`);
+                    return null;
+                }
+                element.images[0] = imageData;
+            }
+        }
+
+        return elementDatas;
+    }
+
+    async importZip(e: InputEvent) {
+        let file = (e.target as HTMLInputElement).files?.[0];
+
+        if (!file) {
+            alert('Failed to import zip (files[0] was falsey)');
+            return;
+        }
+
+        let zip = new JSZip();
+        let loadedZip = await zip.loadAsync(file);
+        let imagesMap = new Map<string, string>();
+        let manifest: ZipManifest | null = null;
+        let filePromises: Promise<void>[] = [];
+        let anyFailure = false;
+        loadedZip.forEach((file) => {
+            filePromises.push(
+                (async () => {
+                    let result = await zip.files[file].async('base64');
+                    if (file.endsWith('png')) {
+                        imagesMap.set(file, `data:image/png;base64,${result}`);
+                    } else if (file === 'manifest.json') {
+                        let parseResult = tryJsonParse(atob(result));
+                        if (!parseResult) {
+                            anyFailure = true;
+                            alert('Failed to import zip (Failed to parse manifest.json');
+                            return;
+                        }
+                        manifest = parseResult;
+                    }
+
+                    console.log(result);
+                })()
+            );
+        });
+
+        await Promise.all(filePromises);
+
+        if (anyFailure) return;
+        if (!manifest) {
+            alert('Failed to import zip (Couldn\'t find manifest)');
+            return;
+        }
+
+        console.log(manifest);
+        let newMatrixElementsData = this.applyManifestImages(manifest, imagesMap);
+        if (!newMatrixElementsData) return;
+        this.elementDatas = newMatrixElementsData;
+    }
+
+    clickFileInput() {
+        this.fileImportInput.value?.click();
+    }
+
+    async download() {
+        saveAs(await this.generateZipFile(), 'export.zip');
     }
 
     connectedCallback(): void {
@@ -175,14 +293,19 @@ export class VirtualMatrix extends LitElement {
                 ${this.elementDatas.map(
                     (_) => html`
                         <div class="element-container">
+                            <button @click="${() => this.duplicateElement(_)}">Dupliate Element</button>
                             <button @click="${() => this.deleteElement(_)}">Delete Element</button>
-                            <matrix-element
-                                @image-changed="${this.onAnyImageChanged}"
-                                .data="${_}"></matrix-element>
+                            <matrix-element @image-changed="${this.onAnyImageChanged}" .data="${_}"></matrix-element>
                         </div>
                     `
                 )}
             </div>
+
+            <button @click="${this.download}">Download</button>
+            <button @click="${this.uploadToScreen}">Upload to screen</button>
+            <button @click="${this.clickFileInput}">Import zip file</button>
+            <br />
+            <input ${ref(this.fileImportInput)} id="fileImportInput" type="file" @input="${this.importZip}" />
         `;
     }
 }

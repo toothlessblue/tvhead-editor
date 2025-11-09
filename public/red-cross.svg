@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="253.4894"
+   height="253.48941"
+   viewBox="0 0 67.069066 67.069075"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   sodipodi:docname="red-cross.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="px"
+     showguides="true"
+     inkscape:zoom="0.88016274"
+     inkscape:cx="93.732666"
+     inkscape:cy="203.93956"
+     inkscape:window-width="2560"
+     inkscape:window-height="1440"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-34.198798,-27.134627)">
+    <path
+       id="rect1"
+       style="fill:#ff1e00;fill-opacity:1;stroke-width:0.264583"
+       d="m 36.274301,29.210131 c -2.767337,2.767337 -2.767337,7.222904 0,9.990242 l 21.46879,21.46879 -21.46879,21.46879 c -2.767337,2.767337 -2.767337,7.222905 0,9.990242 2.767337,2.767337 7.222905,2.767337 9.990242,0 l 21.46879,-21.46879 21.46879,21.46879 c 2.767336,2.767336 7.222902,2.767334 9.990239,-3e-6 2.767338,-2.767338 2.767338,-7.222904 4e-6,-9.99024 L 77.723576,60.669162 99.192362,39.200376 c 2.767338,-2.767341 2.767338,-7.222907 2e-6,-9.990244 -2.767337,-2.767337 -7.222904,-2.767339 -9.990244,10e-7 L 67.733334,50.67892 46.264544,29.21013 c -2.767338,-2.767338 -7.222905,-2.767338 -9.990243,1e-6 z" />
+  </g>
+</svg>
