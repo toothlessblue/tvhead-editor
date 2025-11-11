@@ -2,6 +2,7 @@ import { LitElement, css, html } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { MatrixElementData } from '../utils/matrix-element-data';
 import { ImageEditor } from './image-editor';
+import { confirmAlert } from '../decorators/confirm-alert';
 
 @customElement('matrix-element')
 export class MatrixElement extends LitElement {
@@ -22,6 +23,7 @@ export class MatrixElement extends LitElement {
             height: 100px;
             background-size: contain;
             background-repeat: no-repeat;
+            image-rendering: pixelated;
         }
 
         .frame-container {
@@ -41,6 +43,13 @@ export class MatrixElement extends LitElement {
             position: absolute;
             left: 0;
             transform: translate(-50%);
+        }
+        
+        #addFrameButton {
+            width: 30px;
+            height: 30px;
+            margin: 10px auto;
+            display: block;
         }
     `;
 
@@ -64,6 +73,7 @@ export class MatrixElement extends LitElement {
         this.requestUpdate('data');
     }
 
+    @confirmAlert("Are you sure you want to delete this frame?")
     deleteFrame(image: string) {
         let index = this.data.images.findIndex((_) => _ === image);
         if (index === -1) {
@@ -92,7 +102,7 @@ export class MatrixElement extends LitElement {
                     </div>
                 `
             )}
-            <button @click="${this.addFrame}">Add frame</button>
+            <img id="addFrameButton" @click="${this.addFrame}" src="/add-icon.svg"/>
         `;
     }
 }

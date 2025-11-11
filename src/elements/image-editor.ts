@@ -110,6 +110,7 @@ export class ImageEditor extends LitElement {
     currentBrush: Brush | null = null;
 
     isMouseDown = false;
+    isTouchDown = false;
     padding: number = 30;
     currentColor: string = 'white';
     originalImage: string = '';
@@ -131,7 +132,9 @@ export class ImageEditor extends LitElement {
         if (!this._canvas) {
             this._canvas = document.createElement('canvas');
             this._canvas.addEventListener('mousemove', this.onMouseMove);
+            this._canvas.addEventListener('touchmove', this.onTouchMove);
             this._canvas.addEventListener('mousedown', this.onMouseDown);
+            this._canvas.addEventListener('touchstart', this.onTouchDown);
             window.addEventListener('mouseup', this.onMouseUp);
             this._canvas.width = this.width;
             this._canvas.height = this.height;
@@ -172,13 +175,42 @@ export class ImageEditor extends LitElement {
     _imageData: ImageData | null = null;
 
     @bind
-    onCanvasClicked(e: MouseEvent) {
+    onCanvasClicked(e: MouseEvent | TouchEvent) {
+        let pageX: number, pageY: number;
+        if (e instanceof TouchEvent) {
+            pageX = e.touches[0].pageX;
+            pageY = e.touches[0].pageY;
+        } else {
+            pageX = e.pageX;
+            pageY = e.pageY;
+        }
+
         let canvasRect = this.canvas.getBoundingClientRect();
 
-        let x = e.pageX - canvasRect.x;
-        let y = e.pageY - canvasRect.y;
+        let x = pageX - canvasRect.x;
+        let y = pageY - canvasRect.y;
 
         this.setPixel(Math.floor(x / this.scale), Math.floor(y / this.scale));
+    }
+
+    @bind
+    onTouchMove(e: TouchEvent) {
+        if (this.isTouchDown) {
+            this.onCanvasClicked(e);
+            e.preventDefault();
+        }
+    }
+
+    @bind
+    onTouchDown(e: TouchEvent) {
+        this.isTouchDown = true;
+        this.onCanvasClicked(e);
+        e.preventDefault();
+    }
+
+    @bind
+    onTouchUp() {
+        this.isTouchDown = false;
     }
 
     @bind
@@ -189,15 +221,15 @@ export class ImageEditor extends LitElement {
     }
 
     @bind
-    onMouseUp() {
-        this.isMouseDown = false;
-    }
-
-    @bind
     onMouseDown(e: MouseEvent) {
         if (e.buttons !== 1) return;
         this.isMouseDown = true;
         this.onCanvasClicked(e);
+    }
+
+    @bind
+    onMouseUp() {
+        this.isMouseDown = false;
     }
 
     onColorInput(e: InputEvent) {
@@ -281,12 +313,11 @@ export class ImageEditor extends LitElement {
 
             ${this.brushes.map(
                 (_) => html`
-                    <div @click="${() => this.currentBrush = _}" class="brush" ?selected=${_ === this.currentBrush}>
+                    <div @click="${() => (this.currentBrush = _)}" class="brush" ?selected=${_ === this.currentBrush}>
                         <img src="${_.getIcon()}" />
                     </div>
                 `
             )}
-
             ${cache(this.currentBrush?.renderBrushOptions())}
         `;
     }

@@ -12,6 +12,8 @@ import { saveAs } from 'file-saver';
 import { trimDataURL } from '../utils/trimDataURL';
 import type { ZipManifest } from '../utils/zip-manifest';
 import { tryJsonParse } from '../utils/tryJsonParse';
+import { SharedCSS } from '../shared-css';
+import { confirmAlert } from '../decorators/confirm-alert';
 
 const INVISIBLE_DIV = document.createElement('div');
 document.body.appendChild(INVISIBLE_DIV);
@@ -32,47 +34,76 @@ export class VirtualMatrix extends LitElement {
 
     fileImportInput = createRef<HTMLInputElement>();
 
-    static styles = css`
-        :host {
-            display: block;
-        }
+    static styles = [
+        SharedCSS,
+        css`
+            :host {
+                display: block;
+            }
 
-        #virtual-matrix-grid {
-            max-width: 1000px;
-            aspect-ratio: 2;
-            width: 100%;
-            background-color: black;
-            margin: auto;
-            position: relative;
-            overflow: hidden;
-        }
+            #virtual-matrix-grid {
+                max-width: 1000px;
+                aspect-ratio: 2;
+                width: 100%;
+                background-color: black;
+                margin: auto;
+                position: relative;
+                overflow: hidden;
+            }
 
-        .element-container {
-            padding: 5px;
-            border-radius: 5px;
-            background-color: #00000050;
-            width: fit-content;
-        }
+            .element-container {
+                padding: 5px;
+                border-radius: 5px;
+                background-color: #00000070;
+                width: fit-content;
+                min-width: 100px;
+                min-height: 200px;
+            }
 
-        .element-container + .element-container {
-            margin-top: 5px;
-        }
+            .element-container + .element-container {
+                margin-top: 5px;
+                margin-left: 5px;
+            }
 
-        #elements-list {
-            display: flex;
-            flex-wrap: wrap;
-        }
+            #elements-list {
+                display: flex;
+                flex-wrap: wrap;
+            }
 
-        .virtual-element {
-            position: absolute;
-            background-color: #ffffff22;
-        }
+            .virtual-element {
+                position: absolute;
+                background-color: #ffffff22;
+            }
 
-        preview-matrix-element {
-            width: 100%;
-            height: 100%;
-        }
-    `;
+            preview-matrix-element {
+                width: 100%;
+                height: 100%;
+            }
+
+            .element-actions {
+                margin: auto;
+                width: fit-content;
+            }
+
+            .element-action {
+                width: 30px;
+                height: 30px;
+                display: inline-block;
+            }
+
+            .element-action + .element-action {
+                margin-left: 5px;
+            }
+
+            #file-import-input {
+                position: fixed;
+                top: -100%;
+                left: -100%;
+                visibility: hidden;
+                /* I cast: Get that shit off of my screen! */
+            }
+        `,
+    ];
 
     get scale(): number {
         return (this.virtualGrid.value?.getBoundingClientRect().width ?? 0) / this.PIXEL_WIDTH;
@@ -93,6 +124,7 @@ export class VirtualMatrix extends LitElement {
         this.requestUpdate('elementDatas');
     }
 
+    @confirmAlert('Are you sure you want to delete this item?')
     deleteElement(element: MatrixElementData) {
         let index = this.elementDatas.findIndex((_) => _ === element);
         if (index === -1) {
@@ -117,6 +149,10 @@ export class VirtualMatrix extends LitElement {
             y: e.clientY - draggingElementRect.y,
         };
         e.dataTransfer?.setDragImage(INVISIBLE_DIV, 0, 0);
+    }
+
+    onDragEnter(e: DragEvent) {
+        e.preventDefault();
     }
 
     onVirtualElementDragged(e: DragEvent) {
@@ -166,7 +202,7 @@ export class VirtualMatrix extends LitElement {
     async generateZipFile() {
         let zip = new JSZip();
         let manifest: ZipManifest = {
-            elements: deepClone(this.elementDatas)
+            elements: deepClone(this.elementDatas),
         };
 
         for (let element of manifest.elements) {
@@ -201,7 +237,7 @@ export class VirtualMatrix extends LitElement {
                     alert(`Failed to import zip (Filename ${imageFilename} in manifest was not found as file)`);
                     return null;
                 }
-                element.images[0] = imageData;
+                element.images[i] = imageData;
             }
         }
 
@@ -247,7 +283,7 @@ export class VirtualMatrix extends LitElement {
 
         if (anyFailure) return;
         if (!manifest) {
-            alert('Failed to import zip (Couldn\'t find manifest)');
+            alert("Failed to import zip (Couldn't find manifest)");
             return;
         }
 
@@ -257,6 +293,7 @@ export class VirtualMatrix extends LitElement {
         this.elementDatas = newMatrixElementsData;
     }
 
+    @confirmAlert('Importing will delete everything currently on the canvas, are you sure?')
     clickFileInput() {
         this.fileImportInput.value?.click();
     }
@@ -272,7 +309,11 @@ export class VirtualMatrix extends LitElement {
 
     render() {
         return html`
-            <div ${ref(this.virtualGrid)} id="virtual-matrix-grid" @dragover="${this.onVirtualElementDragged}">
+            <div
+                ${ref(this.virtualGrid)}
+                id="virtual-matrix-grid"
+                @dragover="${this.onVirtualElementDragged}"
+                @dragenter="${this.onDragEnter}">
                 ${this.elementDatas.map((_) => {
                     let screenPos = this.pixelPosToScreen({ x: _.x, y: _.y });
                     let dimensions = this.pixelPosToScreen({ x: _.width, y: _.height });
@@ -288,24 +329,35 @@ export class VirtualMatrix extends LitElement {
                     `;
                 })}
             </div>
-            <button @click="${this.onNewElement}">Create element</button>
             <div id="elements-list">
                 ${this.elementDatas.map(
                     (_) => html`
                         <div class="element-container">
-                            <button @click="${() => this.duplicateElement(_)}">Dupliate Element</button>
-                            <button @click="${() => this.deleteElement(_)}">Delete Element</button>
+                            <div class="element-actions">
+                                <img
+                                    class="element-action"
+                                    @click="${() => this.duplicateElement(_)}"
+                                    src="/duplicate-icon.svg" />
+                                <img
+                                    class="element-action"
+                                    @click="${() => this.deleteElement(_)}"
+                                    src="/red-cross.svg" />
+                            </div>
                             <matrix-element @image-changed="${this.onAnyImageChanged}" .data="${_}"></matrix-element>
                         </div>
                     `
                 )}
+
+                <div class="element-container" @click="${this.onNewElement}" style="display: flex">
+                    <img src="/add-icon.svg" class="image-button" style="margin: auto;" />
+                </div>
             </div>
 
-            <button @click="${this.download}">Download</button>
+            <img class="image-button" @click="${this.download}" src="/save-icon.svg" />
             <button @click="${this.uploadToScreen}">Upload to screen</button>
             <button @click="${this.clickFileInput}">Import zip file</button>
             <br />
-            <input ${ref(this.fileImportInput)} id="fileImportInput" type="file" @input="${this.importZip}" />
+            <input ${ref(this.fileImportInput)} id="file-import-input" type="file" @input="${this.importZip}" />
         `;
     }
 }
