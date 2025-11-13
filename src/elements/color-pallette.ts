@@ -1,6 +1,7 @@
-import { LitElement, css, html } from 'lit';
+import { LitElement, css, html, unsafeCSS } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { bind } from '../decorators/bind';
+import paletteIcon from '../assets/palette.svg';
 
 @customElement('color-pallette')
 export class ColorPallette extends LitElement {
@@ -36,7 +37,7 @@ export class ColorPallette extends LitElement {
             z-index: 99;
             inset: 0;
             background-color: red;
-            background: url(/color-picker-icon.png);
+            background: url("${unsafeCSS(paletteIcon)}");
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
@@ -79,7 +80,9 @@ export class ColorPallette extends LitElement {
     @bind
     onColorInput(e: InputEvent) {
         let color = (e.target as HTMLInputElement).value;
-        this.colors.push(color);
+        if (!this.colors.includes(color)) {
+            this.colors.push(color);
+        }
         this.requestUpdate('colors');
         this.onButtonPress(color);
     }

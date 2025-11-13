@@ -1,4 +1,4 @@
-import { LitElement, css, html, type PropertyValues } from 'lit';
+import { LitElement, css, html, unsafeCSS, type PropertyValues } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { bind } from '../decorators/bind';
 import { ColorPallette } from './color-pallette';
@@ -6,6 +6,10 @@ import type { Brush } from '../brushes/Brush';
 import { EraserBrush } from '../brushes/EraserBrush';
 import { PixelBrush } from '../brushes/PixelBrush';
 import { cache } from 'lit/directives/cache.js';
+import { SharedCSS } from '../shared-css';
+import canvasGrid from '../assets/canvas-grid.svg'
+import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
+import { saveIcon, trashRestoreIcon } from '../utils/icons';
 
 @customElement('image-editor')
 export class ImageEditor extends LitElement {
@@ -21,7 +25,7 @@ export class ImageEditor extends LitElement {
         return editor;
     }
 
-    static styles = css`
+    static styles = [SharedCSS, css`
         :host {
             width: 100%;
         }
@@ -46,7 +50,7 @@ export class ImageEditor extends LitElement {
         }
 
         #grid {
-            background-image: url(/canvas-grid.svg);
+            background-image: url("${unsafeCSS(canvasGrid)}");
             background-size: cover;
             position: absolute;
             inset: 0;
@@ -95,7 +99,7 @@ export class ImageEditor extends LitElement {
                 rgba(255, 0, 0, 1) 100%
             ) 1;solid;
         }
-    `;
+    `];
 
     @property({ type: Number })
     width: number = 64;
@@ -177,7 +181,7 @@ export class ImageEditor extends LitElement {
     @bind
     onCanvasClicked(e: MouseEvent | TouchEvent) {
         let pageX: number, pageY: number;
-        if (e instanceof TouchEvent) {
+        if ('touches' in e) {
             pageX = e.touches[0].pageX;
             pageY = e.touches[0].pageY;
         } else {
@@ -308,8 +312,8 @@ export class ImageEditor extends LitElement {
             </div>
 
             <div id="bin" @click="${this.onBin}"></div>
-            <div @click="${this.onSaveClose}">Save</div>
-            <div @click="${this.onCancel}">Cancel</div>
+            <div style="fill: var(--good-green)" @click="${this.onSaveClose}">${unsafeSVG(saveIcon)}</div>
+            <div style="fill: var(--delete-red)" @click="${this.onCancel}">${unsafeSVG(trashRestoreIcon)}</div>
 
             ${this.brushes.map(
                 (_) => html`

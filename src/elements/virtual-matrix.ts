@@ -14,6 +14,8 @@ import type { ZipManifest } from '../utils/zip-manifest';
 import { tryJsonParse } from '../utils/tryJsonParse';
 import { SharedCSS } from '../shared-css';
 import { confirmAlert } from '../decorators/confirm-alert';
+import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
+import { copyIcon, downloadFileIcon, importFileIcon, plusCircleIcon, trashIcon, uploadIcon } from '../utils/icons';
 
 const INVISIBLE_DIV = document.createElement('div');
 document.body.appendChild(INVISIBLE_DIV);
@@ -68,6 +70,7 @@ export class VirtualMatrix extends LitElement {
             #elements-list {
                 display: flex;
                 flex-wrap: wrap;
+                margin: 10px;
             }
 
             .virtual-element {
@@ -293,7 +296,7 @@ export class VirtualMatrix extends LitElement {
         this.elementDatas = newMatrixElementsData;
     }
 
-    @confirmAlert('Importing will delete everything currently on the canvas, are you sure?')
+    @confirmAlert('Importing will delete everything currently on the canvas, are you sure?', function (this: VirtualMatrix) {return this.elementDatas.length > 0})
     clickFileInput() {
         this.fileImportInput.value?.click();
     }
@@ -334,14 +337,19 @@ export class VirtualMatrix extends LitElement {
                     (_) => html`
                         <div class="element-container">
                             <div class="element-actions">
-                                <img
+                                <div
+                                    style="fill: var(--good-green);"
                                     class="element-action"
-                                    @click="${() => this.duplicateElement(_)}"
-                                    src="/duplicate-icon.svg" />
-                                <img
+                                    @click="${() => this.duplicateElement(_)}">
+                                    ${unsafeSVG(copyIcon)}
+                                </div>
+
+                                <div
+                                    style="fill: var(--delete-red);"
                                     class="element-action"
-                                    @click="${() => this.deleteElement(_)}"
-                                    src="/red-cross.svg" />
+                                    @click="${() => this.deleteElement(_)}">
+                                    ${unsafeSVG(trashIcon)}
+                                </div>
                             </div>
                             <matrix-element @image-changed="${this.onAnyImageChanged}" .data="${_}"></matrix-element>
                         </div>
@@ -349,14 +357,10 @@ export class VirtualMatrix extends LitElement {
                 )}
 
                 <div class="element-container" @click="${this.onNewElement}" style="display: flex">
-                    <img src="/add-icon.svg" class="image-button" style="margin: auto;" />
+                    <div style="fill: var(--good-green); margin: auto">${unsafeSVG(plusCircleIcon)}</div>
                 </div>
             </div>
 
-            <img class="image-button" @click="${this.download}" src="/save-icon.svg" />
-            <button @click="${this.uploadToScreen}">Upload to screen</button>
-            <button @click="${this.clickFileInput}">Import zip file</button>
-            <br />
             <input ${ref(this.fileImportInput)} id="file-import-input" type="file" @input="${this.importZip}" />
         `;
     }

@@ -2,8 +2,10 @@ import { html } from 'lit';
 import { Brush } from './Brush';
 import { bind } from '../decorators/bind';
 import type { ColorPallette } from '../elements/color-pallette';
+import brushIcon from '../assets/pixel-brush-icon.svg';
 
 export class PixelBrush extends Brush {
+    radius: number = 1;
     color: string = '#ffffff';
     pallette: ColorPallette;
 
@@ -13,7 +15,7 @@ export class PixelBrush extends Brush {
     }
 
     getIcon(): string {
-        return '/pixel-brush-icon.svg';
+        return brushIcon;
     }
 
     @bind
@@ -21,15 +23,23 @@ export class PixelBrush extends Brush {
         this.color = (e.target as ColorPallette).value;
     }
 
+    @bind
+    onRadiusInput(e: InputEvent) {
+        this.radius = parseInt((e.target as HTMLInputElement).value);
+    }
+
     renderBrushOptions() {
         return html`
             <color-pallette @input="${this.onColorInput}"></color-pallette>
-            <input type="number" />
+            <input min="1" type="number" @input="${this.onRadiusInput}" value="${this.radius}" />
         `;
     }
 
     paint(ctx: CanvasRenderingContext2D, x: number, y: number): void {
         ctx.fillStyle = this.color;
         ctx.fillRect(x, y, 1, 1);
+        ctx.beginPath();
+        ctx.arc(x, y, this.radius - 1, 0, Math.PI * 2);
+        ctx.fill();
     }
 }
